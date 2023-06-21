@@ -1,4 +1,4 @@
-# simple util for downloading deployments directly :)
+# simple util for downloading WindowsPlayer deployments directly :)
 
 import os
 import shutil
@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from argparse import ArgumentParser
 
 # args
-parser = ArgumentParser(description="Download a complete Roblox version deployment directly from a channel & hash")
+parser = ArgumentParser(description="Download a complete Roblox WindowsPlayer deployment directly from a channel & hash")
 parser.add_argument("--channel", type=str, default="LIVE", help="The channel to download from (i.e. \"LIVE\", or a z-channel)")
 parser.add_argument("--version", type=str, help="(*) The deployment \"hash\" (e.g. \"version-e28adbc917f34900\")")
 
