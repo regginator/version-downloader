@@ -24,3 +24,5 @@ options:
   --channel CHANNEL  The channel to download from (i.e. "LIVE", or a z-channel)
   --version VERSION  (*) The deployment "hash" (e.g. "version-e28adbc917f34900")
 ```
+
+*Downloaded versions will be stored in `./versions/{channel-name}/{version-hash}/extracted`*
