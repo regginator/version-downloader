@@ -2,6 +2,8 @@
 
 Simple Python Script to Directly Download & Extract a Complete WindowsPlayer Roblox Deployment
 
+<sup>i made this in like 2 hours for 1 simple thing</sup>
+
 ## Usage
 
 * Clone the Repository
