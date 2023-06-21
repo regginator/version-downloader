@@ -15,9 +15,6 @@ cd version-downloader
 
 ```txt
 $ python3 main.py --help
-```
-
-```txt
 usage: main.py [-h] [--channel CHANNEL] [--version VERSION]
 
 Download a complete Roblox WindowsPlayer deployment directly from a channel & hash
