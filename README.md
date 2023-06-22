@@ -1,8 +1,6 @@
 # version-downloader
 
-Simple Python Script to Directly Download & Extract a Complete WindowsPlayer Roblox Deployment
-
-<sup>i made this in like 2 hours for 1 simple thing</sup>
+Simple Python Script to Directly Download & Extract a Complete WindowsPlayer/WindowsStudio Roblox Deployment
 
 ## Usage
 
@@ -19,7 +17,7 @@ cd version-downloader
 $ python3 main.py --help
 usage: main.py [-h] [--channel CHANNEL] [--version VERSION]
 
-Download a complete Roblox WindowsPlayer deployment directly from a channel & hash
+Download a complete Roblox WindowsPlayer/WindowsStudio deployment directly from a channel & hash
 
 options:
   -h, --help         show this help message and exit
