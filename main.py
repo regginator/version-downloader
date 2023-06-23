@@ -127,17 +127,13 @@ def write_file_path(file_path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
 # lol
-if binary_type == "WindowsStudio":
-    os.makedirs(extracted_folder_path + "ClientSettings/")
-    with open(extracted_folder_path + "ClientSettings/ClientAppSettings.json", "w") as file:
-        file.write("{}")
-    with open(extracted_folder_path + "AppSettings.xml", "w") as file:
-        file.write("""<?xml version="1.0" encoding="UTF-8"?>
-    <Settings>
-        <ContentFolder>content</ContentFolder>
-        <BaseUrl>http://www.roblox.com</BaseUrl>
-    </Settings>
-    """)
+with open(extracted_folder_path + "AppSettings.xml", "w") as file:
+    file.write("""<?xml version="1.0" encoding="UTF-8"?>
+<Settings>
+    <ContentFolder>content</ContentFolder>
+    <BaseUrl>http://www.roblox.com</BaseUrl>
+</Settings>
+""")
 
 # start from line 2 (after the version declare), and every 4 lines after that
 for package_name in pkg_manifest_lines:
