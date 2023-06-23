@@ -118,16 +118,14 @@ if os.path.exists(folder_path):
     shutil.rmtree(folder_path)
 
 raw_folder_path = folder_path + "raw/"
-extracted_folder_path = folder_path + "extracted/"
 os.makedirs(raw_folder_path)
-os.makedirs(extracted_folder_path)
 
 def write_file_path(file_path):
     path = pathlib.Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
 # lol
-with open(extracted_folder_path + "AppSettings.xml", "w") as file:
+with open(folder_path + "AppSettings.xml", "w") as file:
     file.write("""<?xml version="1.0" encoding="UTF-8"?>
 <Settings>
     <ContentFolder>content</ContentFolder>
@@ -145,7 +143,7 @@ for package_name in pkg_manifest_lines:
     blob_response = session.get(version_path + package_name)
     blob = blob_response.content
 
-    file_path = folder_path + f"raw/{package_name}"
+    file_path = raw_folder_path + package_name
     with open(file_path, "wb") as file:
         file.write(blob)
 
@@ -163,13 +161,13 @@ for file_name in os.listdir(raw_folder_path):
 
     if not file_name.endswith(".zip"):
         # can skip and just ins directly
-        shutil.copy(file_path, extracted_folder_path)
+        shutil.copy(file_path, folder_path)
         continue
 
     if not file_name in extract_binding_keys:
         continue
 
-    extract_binding_folder_path = extracted_folder_path + extract_bindings[file_name]
+    extract_binding_folder_path = folder_path + extract_bindings[file_name]
 
     print(f"Extracting {file_name} contents.. ", end="")
 
@@ -190,3 +188,6 @@ for file_name in os.listdir(raw_folder_path):
                     extracted_file.write(sub_file.read())
 
     print("done!")
+
+# now we'll remove the temp `raw` folder
+shutil.rmtree(raw_folder_path)
