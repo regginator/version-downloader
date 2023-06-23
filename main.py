@@ -16,7 +16,7 @@ parser.add_argument("--version", type=str, help="(*) The deployment \"hash\" (e.
 args = parser.parse_args()
 
 # yeah the other shit
-channel_path = "https://setup.rbxcdn.com" if args.channel == "LIVE" else f"https://setup.rbxcdn.com/{args.channel.lower()}"
+channel_path = "https://setup.rbxcdn.com" if args.channel == "LIVE" else f"https://setup.rbxcdn.com/channel/{args.channel.lower()}"
 version_path = f"{channel_path}/{args.version}-"
 
 # https://github.com/pizzaboxer/bloxstrap/blob/3b9ce6077919f4a93ae11661a4f24d67e86ba8e2/Bloxstrap/Bootstrapper.cs#L36-L63
