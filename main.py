@@ -20,7 +20,7 @@ channel_path = "https://setup.rbxcdn.com" if args.channel == "LIVE" else f"https
 version_path = f"{channel_path}/{args.version}-"
 
 # https://github.com/pizzaboxer/bloxstrap/blob/3b9ce6077919f4a93ae11661a4f24d67e86ba8e2/Bloxstrap/Bootstrapper.cs#L36-L63
-windowsplayer_extract_bindings = {
+player_extract_roots = {
     "RobloxApp.zip": "",
     "shaders.zip": "shaders/",
     "ssl.zip": "ssl/",
@@ -48,7 +48,7 @@ windowsplayer_extract_bindings = {
 }
 
 # https://github.com/MaximumADHD/Roblox-Studio-Mod-Manager/blob/main/Config/KnownRoots.json
-windowsstudio_extract_bindings = {
+studio_extract_roots = {
     "RobloxStudio.zip": "",
     "redist.zip": "",
     "Libraries.zip": "",
@@ -99,10 +99,10 @@ print("done!")
 
 # decide the `extract_bindings` to use
 if "RobloxApp.zip" in pkg_manifest_lines:
-    extract_bindings = windowsplayer_extract_bindings
+    extract_bindings = player_extract_roots
     binary_type = "WindowsPlayer"
 elif "RobloxStudio.zip" in pkg_manifest_lines:
-    extract_bindings = windowsstudio_extract_bindings
+    extract_bindings = studio_extract_roots
     binary_type = "WindowsStudio"
 else:
     print("[!] Bad manifest given, exitting..")
