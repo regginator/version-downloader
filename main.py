@@ -1,4 +1,4 @@
-# simple util for downloading WindowsPlayer/WindowsStudio deployments directly :)
+# Simple Python Script to Directly Download & Extract a Complete, Specific WindowsPlayer/WindowsStudio Roblox Deployment
 
 import os
 import sys
@@ -15,7 +15,7 @@ parser.add_argument("--version", type=str, help="(*) The deployment \"hash\" (e.
 
 args = parser.parse_args()
 
-# yeah the other shit
+# other stuff
 channel_path = "https://setup.rbxcdn.com" if args.channel == "LIVE" else f"https://setup.rbxcdn.com/channel/{args.channel.lower()}"
 version_path = f"{channel_path}/{args.version}-"
 

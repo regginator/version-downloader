@@ -1,17 +1,17 @@
 # version-downloader
 
-Simple Python Script to Directly Download & Extract a Complete WindowsPlayer/WindowsStudio Roblox Deployment
+Simple Python Script to Directly Download & Extract a Complete, Specific `WindowsPlayer`/`WindowsStudio` Roblox Deployment
 
 ## Usage
 
-* Clone the Repository
+1. Clone the Repository
 
-```txt
+```sh
 git clone https://github.com/regginator/version-downloader.git
 cd version-downloader
 ```
 
-* Run `main.py`
+2. Run `main.py`
 
 ```txt
 $ python3 main.py --help
