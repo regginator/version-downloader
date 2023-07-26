@@ -3,8 +3,11 @@
 import os
 import sys
 import shutil
+import aiohttp
+import asyncio
 import pathlib
 import requests
+from io import BytesIO
 from zipfile import ZipFile
 from argparse import ArgumentParser
 
@@ -89,26 +92,28 @@ studio_extract_roots = {
     "extracontent-models.zip": "ExtraContent/models/",
 }
 
-# write all zips
-session = requests.session()
+def write_full_path(file_path):
+    path = pathlib.Path(file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
+# write all zips
 print("Fetching rbxPkgManifest.. ", end="")
-pkg_manifest = session.get(version_path + "rbxPkgManifest.txt").text
+pkg_manifest = requests.get(version_path + "rbxPkgManifest.txt").text
 pkg_manifest_lines = pkg_manifest.splitlines()
 print("done!")
 
-# decide the `extract_bindings` to use
+# decide the `extract_roots` to use
 if "RobloxApp.zip" in pkg_manifest_lines:
-    extract_bindings = player_extract_roots
+    extract_roots = player_extract_roots
     binary_type = "WindowsPlayer"
 elif "RobloxStudio.zip" in pkg_manifest_lines:
-    extract_bindings = studio_extract_roots
+    extract_roots = studio_extract_roots
     binary_type = "WindowsStudio"
 else:
     print("[!] Bad manifest given, exitting..")
     sys.exit(1)
 
-extract_binding_keys = extract_bindings.keys()
+extract_binding_keys = extract_roots.keys()
 
 print(f"Fetching blobs for BinaryType `{binary_type}`..")
 
@@ -117,12 +122,7 @@ if os.path.exists(folder_path):
     print("[+] Existing folder for current version already downloaded, removing..")
     shutil.rmtree(folder_path)
 
-raw_folder_path = folder_path + "raw/"
-os.makedirs(raw_folder_path)
-
-def write_file_path(file_path):
-    path = pathlib.Path(file_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+os.makedirs(folder_path)
 
 # lol
 with open(folder_path + "AppSettings.xml", "w") as file:
@@ -133,45 +133,33 @@ with open(folder_path + "AppSettings.xml", "w") as file:
 </Settings>
 """)
 
-# start from line 2 (after the version declare), and every 4 lines after that
-for package_name in pkg_manifest_lines:
-    if not "." in package_name:
-        continue
+async def download_package(package_name, session):
+    print(f"Fetching `{package_name}`.. ")
+    blob_url = version_path + package_name
 
-    print(f"Fetching `{package_name}`.. ", end="")
+    async with session.get(blob_url, timeout=9e9) as response:
+        if response.status != 200:
+            print(f"[X] Failed to fetch blob ({response.status}) @ {blob_url}")
+            return
 
-    blob_response = session.get(version_path + package_name)
-    blob = blob_response.content
+        blob = await response.content.read() # Will use the byte stream ret with `ZipFile()` directly
+        print(f"`{package_name}` received!")
 
-    file_path = raw_folder_path + package_name
-    with open(file_path, "wb") as file:
-        file.write(blob)
+    if not package_name.endswith(".zip"):
+        # can skip and just add directly
+        with open(folder_path + package_name, "wb") as file:
+            file.write(blob)
 
-    print("done!")
+        return
 
-    if not package_name in extract_binding_keys and package_name.endswith(".zip"):
+    if not package_name in extract_binding_keys:
         print(f"[!] Package name \"{package_name}\" not defined in extract bindings, will skip extraction..")
+        return
+    
+    print(f"Extracting {package_name}.. ")
+    extract_binding_folder_path = folder_path + extract_roots[package_name]
 
-# now we'll close the session after completion, of course
-session.close()
-
-print("-------- Extracting zips --------")
-for file_name in os.listdir(raw_folder_path):
-    file_path = raw_folder_path + file_name
-
-    if not file_name.endswith(".zip"):
-        # can skip and just ins directly
-        shutil.copy(file_path, folder_path)
-        continue
-
-    if not file_name in extract_binding_keys:
-        continue
-
-    extract_binding_folder_path = folder_path + extract_bindings[file_name]
-
-    print(f"Extracting {file_name} contents.. ", end="")
-
-    with ZipFile(file_path, "r") as archive:
+    with ZipFile(BytesIO(blob), "r") as archive:
         for sub_file_name in archive.namelist():
             if sub_file_name.endswith("\\"):
                 # directory!
@@ -183,11 +171,25 @@ for file_name in os.listdir(raw_folder_path):
             with archive.open(sub_file_name, "r") as sub_file:
                 extract_path = extract_binding_folder_path + sub_file_path
 
-                write_file_path(extract_path)
+                write_full_path(extract_path)
                 with open(extract_path, "wb") as extracted_file:
                     extracted_file.write(sub_file.read())
+    
+    print(f"{package_name} extracted!")
 
-    print("done!")
+async def main():
+    connector = aiohttp.TCPConnector(limit=None)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = []
 
-# now we'll remove the temp `raw` folder
-shutil.rmtree(raw_folder_path)
+        for package_name in pkg_manifest_lines:
+            if not "." in package_name:
+                continue
+            
+            task = asyncio.ensure_future(download_package(package_name, session))
+            tasks.append(task)
+
+        # wait for all tasks to finish before exitting session context
+        await asyncio.gather(*tasks)
+
+asyncio.run(main())

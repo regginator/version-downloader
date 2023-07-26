@@ -11,7 +11,13 @@ git clone https://github.com/regginator/version-downloader.git
 cd version-downloader
 ```
 
-2. Run `main.py`
+2. Install requirements ([`aiohttp`](https://pypi.org/project/aiohttp)) via `pip`:
+
+```sh
+pip install -r requirements.txt
+```
+
+3. Run `main.py`
 
 ```txt
 $ python3 main.py --help
