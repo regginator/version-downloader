@@ -11,15 +11,20 @@ from io import BytesIO
 from zipfile import ZipFile
 from argparse import ArgumentParser
 
-# args
 parser = ArgumentParser(description="Download a complete Roblox WindowsPlayer/WindowsStudio deployment directly from a channel & hash")
-parser.add_argument("--channel", type=str, default="LIVE", help="The channel to download from (i.e. \"LIVE\", or a z-channel)")
-parser.add_argument("--version", type=str, help="(*) The deployment \"hash\" (e.g. \"version-e28adbc917f34900\")")
+parser.add_argument("--channel", "-c", default="LIVE", help="The channel to download from (i.e. \"LIVE\", or a z-channel)")
+parser.add_argument("--version", "-v", help="(*) The deployment \"hash\" (e.g. \"version-e28adbc917f34900\")")
+parser.add_argument("--host", default="https://setup.rbxcdn.com", help="(*) The setup S3 bucket host (e.g. \"https://setup.rbxcdn.com\")")
+parser.add_argument("--ignore-manifest", action="store_true")
+parser.add_argument("--is-player", action="store_true")
+parser.add_argument("--is-studio", action="store_true")
 
 args = parser.parse_args()
 
-# other stuff
-channel_path = "https://setup.rbxcdn.com" if args.channel == "LIVE" else f"https://setup.rbxcdn.com/channel/{args.channel.lower()}"
+host = args.host
+ignore_manifest = args.ignore_manifest
+
+channel_path = host if args.channel == "LIVE" else f"{host}/channel/{args.channel.lower()}"
 version_path = f"{channel_path}/{args.version}-"
 
 # https://github.com/pizzaboxer/bloxstrap/blob/3b9ce6077919f4a93ae11661a4f24d67e86ba8e2/Bloxstrap/Bootstrapper.cs#L36-L63
@@ -97,20 +102,30 @@ def write_full_path(file_path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
 # write all zips
-print("Fetching rbxPkgManifest.. ", end="")
-pkg_manifest = requests.get(version_path + "rbxPkgManifest.txt").text
-pkg_manifest_lines = pkg_manifest.splitlines()
-print("done!")
+if not ignore_manifest:
+    print("Fetching rbxPkgManifest.. ", end="")
+    pkg_manifest = requests.get(version_path + "rbxPkgManifest.txt").text
+    pkg_manifest_lines = pkg_manifest.splitlines()
+    print("done!")
 
-# decide the `extract_roots` to use
-if "RobloxApp.zip" in pkg_manifest_lines:
+    # decide the `extract_roots` to use
+    if "RobloxApp.zip" in pkg_manifest_lines:
+        extract_roots = player_extract_roots
+        binary_type = "WindowsPlayer"
+    elif "RobloxStudio.zip" in pkg_manifest_lines:
+        extract_roots = studio_extract_roots
+        binary_type = "WindowsStudio"
+    else:
+        print("[!] Bad manifest given, exitting..")
+        sys.exit(1)
+elif args.is_player:
     extract_roots = player_extract_roots
     binary_type = "WindowsPlayer"
-elif "RobloxStudio.zip" in pkg_manifest_lines:
+elif args.is_studio:
     extract_roots = studio_extract_roots
     binary_type = "WindowsStudio"
 else:
-    print("[!] Bad manifest given, exitting..")
+    print("--ignore-manifest true, but neither --is-player or --is-studio provided", file=sys.stderr)
     sys.exit(1)
 
 extract_binding_keys = extract_roots.keys()
@@ -145,32 +160,32 @@ async def download_package(package_name, session):
         blob = await response.content.read() # Will use the byte stream ret with `ZipFile()` directly
         print(f"`{package_name}` received!")
 
-    if not package_name.endswith(".zip"):
-        # can skip and just add directly
-        with open(folder_path + package_name, "wb") as file:
-            file.write(blob)
+    #if not package_name.endswith(".zip"):
+    #    # can skip and just add directly
+    #    with open(folder_path + package_name, "wb") as file:
+    #        file.write(blob)
 
-        return
+    #    return
 
-    if not package_name in extract_binding_keys:
-        print(f"[!] Package name \"{package_name}\" not defined in extract bindings, will skip extraction..")
-        return
-    
+    #if not package_name in extract_binding_keys:
+    #    print(f"[!] Package name \"{package_name}\" not defined in extract bindings, will skip extraction..")
+    #    return
+
     print(f"Extracting {package_name}.. ")
     extract_binding_folder_path = folder_path + extract_roots[package_name]
 
     with ZipFile(BytesIO(blob), "r") as archive:
         for sub_file_name in archive.namelist():
-            if sub_file_name.endswith("\\"):
-                # directory!
-                continue
-
             sub_file_path = sub_file_name.replace("\\", "/")
+            extract_path = extract_binding_folder_path + sub_file_path
+
+            if sub_file_path.endswith("/"):
+                # directory!
+                os.makedirs(extract_path, exist_ok=True)
+                continue
 
             # write to extracted..
             with archive.open(sub_file_name, "r") as sub_file:
-                extract_path = extract_binding_folder_path + sub_file_path
-
                 write_full_path(extract_path)
                 with open(extract_path, "wb") as extracted_file:
                     extracted_file.write(sub_file.read())
@@ -182,7 +197,7 @@ async def main():
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = []
 
-        for package_name in pkg_manifest_lines:
+        for package_name in extract_binding_keys:
             if not "." in package_name:
                 continue
             
